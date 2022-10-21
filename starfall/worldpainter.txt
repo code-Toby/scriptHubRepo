@@ -1,0 +1,207 @@
+--@name WorldPainter
+--@author {toby}|[discord: tobyy#4858]
+--@shared
+
+if SERVER then
+    function Paint(pos,ang,Clr,Draw_Size) 
+        local Holo = holograms.create(pos,ang,"models/holograms/hq_cylinder.mdl",Vector(Draw_Size,Draw_Size,0.01))
+        Holo:suppressEngineLighting(true)
+        Holo:setColor(Clr)
+        
+        return Holo
+    end
+    
+    local SaveTable = {}
+    local DrawSize = 1
+    local Layer = 1
+    local Colr = Color(255,255,255)
+    local MaxHolos = holograms.hologramsLeft()
+    local RemainingPaint = MaxHolos
+
+    --StartMessages
+
+        
+        timer.create("startup",1,1,function()
+            print("---Painter v1")
+            print("--How to use")
+            print("--press r to paint")
+            
+            print("---Commadns:")
+            print("--!save/load <name>")
+            print("--!clr <r> <g> <b>")
+            print("--!size <number>")
+            print("--!layer <number>")
+            print("--!clear")
+        end)
+    --END----------
+
+
+    timer.create("DataSender",0.2,0,function()
+        local Data = {DrawSize,Layer,Colr,MaxHolos,RemainingPaint}
+        --printTable(Data)
+        net.start("SendPaintData")
+            net.writeTable(Data)
+        net.send()
+    end)
+
+    hook.add("tick","",function()
+        if holograms.hologramsLeft() < 1 then return end
+        if owner():keyDown(IN_KEY.RELOAD) then 
+            local Holo = Paint(owner():getEyeTrace().HitPos  + owner():getEyeTrace().HitNormal * Layer ,owner():getEyeTrace().HitNormal:getAngle() + Angle(90,0,0),Colr,DrawSize)
+            
+            table.insert(SaveTable,Holo)
+        end
+        
+        RemainingPaint = holograms.hologramsLeft()
+    end)
+    
+    hook.add("PlayerSay","ChatCmds",function(ply, txt, tm)
+        if not ( ply == owner()) then return end
+        
+        local CMDTemp = string.explode(" ",txt)
+        --printTable(CMDTemp)
+        
+        if (CMDTemp[1] == "!clr") then
+            local CMD = string.explode("!clr ",txt)
+            for k, v in pairs(CMD) do
+                local Args = string.explode(" ",v)
+                Colr = Color(tonumber(Args[1]),tonumber(Args[2]),tonumber(Args[3]))
+            end
+            
+            return ""
+        end
+        
+        if (CMDTemp[1] == "!size") then
+            local CMD = string.explode("!size ",txt)
+            for k, v in pairs(CMD) do
+                local Args = string.explode(" ",v)
+                DrawSize = tonumber(Args[1])
+            end
+            
+            return ""
+        end
+        
+        if (CMDTemp[1] == "!layer") then
+            local CMD = string.explode("!layer ",txt)
+            for k, v in pairs(CMD) do
+                local Args = string.explode(" ",v)
+                Layer = tonumber(Args[1])
+            end
+            
+            return ""
+        end
+        
+        if (CMDTemp[1] == "!save") then
+            local CMD = string.explode("!save ",txt)
+            for k, v in pairs(CMD) do
+                local Args = string.explode(" ",v)
+                if (SaveTable[1] == nil) then 
+                    print("get to painting")
+                    return     
+                end
+                
+                net.start("Save_func")
+                    net.writeString(Args[1])
+                    net.writeTable(SaveTable)
+                net.send()
+            end
+            
+            return ""
+        end
+        
+        if (CMDTemp[1] == "!load") then
+            local CMD = string.explode("!load ",txt)
+            for k, v in pairs(CMD) do
+                local Args = string.explode(" ",v)
+                if (SaveTable[1] == nil) then
+                    net.start("load_func_1")
+                        net.writeString(Args[1])
+                    net.send()
+                end
+            end
+            
+            return ""
+        end    
+
+        if (CMDTemp[1] == "!clear") then
+            local CMD = string.explode("!clear ",txt)
+            for k, v in pairs(CMD) do
+                SaveTable = {}
+                holograms.removeAll()
+            end
+            
+            return ""
+        end
+    
+    end)
+    
+    net.receive("load_func_2",function(len, ply)
+        local PosData
+        local AngleData
+        local SizeData
+        local ClrData
+        
+        local Data = string.explode("|",net.readString())
+        for _, v in pairs(Data) do
+            local newData = string.explode(";",tostring(v))
+            PosData = string.explode(" ",tostring(newData[1]))
+            AngleData = string.explode(" ",tostring(newData[2]))
+            SizeData = string.explode(" ",tostring(newData[3]))
+            ClrData = string.explode(" ",tostring(newData[4]))
+            
+            Paint(Vector(tonumber(PosData[1]),tonumber(PosData[2]),tonumber(PosData[3])),Angle(tonumber(AngleData[1]),tonumber(AngleData[2]),tonumber(AngleData[3])),Color(tonumber(ClrData[1]),tonumber(ClrData[2]),tonumber(ClrData[3])),tonumber(SizeData[1]))
+            
+        end
+    end) 
+end
+
+if CLIENT then 
+    if player() == owner() then
+        local Data = {0,0,Color(255,255,255),0,0}
+        enableHud(player(),true)    
+   
+        net.receive("Save_func",function()
+            local Name = net.readString()
+            local Data = net.readTable()
+            
+            if file.exists("painter/"..game.getMap().."/") then
+                file.write("painter/"..game.getMap().."/"..Name..".txt","")
+                
+                for k, v in pairs(Data) do
+                    local tbl = {v:getPos(),v:getAngles(),v:toHologram():getScale(),v:getColor()}
+                    file.append("painter/"..game.getMap().."/"..Name..".txt",tostring(tbl[1])..";"..tostring(tbl[2])..";"..tostring(tbl[3])..";"..tostring(tbl[4]).."|")
+                end
+            else
+                file.createDir("painter/"..game.getMap()) 
+            end
+        end)        
+        
+        net.receive("load_func_1",function() 
+            local Name = net.readString()
+            local Data = file.read("painter/"..game.getMap().."/"..Name..".txt")
+            timer.create("LoadTimer",2,1,function()
+                net.start("load_func_2")
+                    net.writeString(Data)
+                net.send()
+            end)
+        end)
+        
+        hook.add("drawhud","",function()
+            net.receive("SendPaintData",function()
+                Data = net.readTable()
+            end)
+            render.setColor(Data[3] / 1.5)    
+            render.drawRect(320,1010,Data[4] / 1.89,80)
+            
+            render.setColor(Color(255,255,255))
+            render.drawText(324,1045,"Layer: "..Data[2],0)
+
+            render.drawText(324,1059,"Size: "..Data[1],0)
+            
+            render.setColor(Data[3])
+            render.drawRect(324,1015,Data[5] / 2.04,30)
+            
+            
+        end)
+    end
+end
