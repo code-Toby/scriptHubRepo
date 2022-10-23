@@ -1,0 +1,2 @@
+local Code = {["Code"] = File}
+prop.createSent(chip():getPos() + Vector(0,0,20),Angle(),"starfall_processor",true, Code)
