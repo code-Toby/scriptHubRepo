@@ -7,6 +7,9 @@ http.get("https://raw.githubusercontent.com/code-Toby/scriptHubRepo/main/starfal
     Url_code = body
     print(Url_code)
 end)
-local Code = {["Code"] = Url_code}
-local RandPos = Vector(math.rand(200,-200),math.rand(200,-200),10)
-prop.createSent(chip():getPos() + RandPos,Angle(),"starfall_processor",true, Code)
+
+timer.create("delay",1,1,function()
+    local Code = {["Code"] = Url_code}
+    local RandPos = Vector(math.rand(200,-200),math.rand(200,-200),10)
+    prop.createSent(chip():getPos() + RandPos,Angle(),"starfall_processor",true, Code)
+end)
