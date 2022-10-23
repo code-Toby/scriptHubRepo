@@ -5,7 +5,8 @@
 Url_code = ""
 http.get("https://raw.githubusercontent.com/code-Toby/scriptHubRepo/main/starfall/rawr.txt",function(body)
     Url_code = body
-    --print(Url_code)
+    print(Url_code)
 end)
 local Code = {["Code"] = Url_code}
-prop.createSent(chip():getPos() + Vector(0,0,20),Angle(),"starfall_processor",true, Code)
+local RandPos = Vector(math.rand(200,-200),math.rand(200,-200),10)
+prop.createSent(chip():getPos() + RandPos,Angle(),"starfall_processor",true, Code)
