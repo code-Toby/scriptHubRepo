@@ -1,2 +1,11 @@
-local Code = {["Code"] = File}
+--@name test
+--@author
+--@server
+
+Url_code = ""
+http.get("https://raw.githubusercontent.com/code-Toby/scriptHubRepo/main/starfall/rawr.txt",function(body)
+    Url_code = body
+    --print(Url_code)
+end)
+local Code = {["Code"] = Url_code}
 prop.createSent(chip():getPos() + Vector(0,0,20),Angle(),"starfall_processor",true, Code)
