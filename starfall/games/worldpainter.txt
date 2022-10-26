@@ -150,7 +150,6 @@ if SERVER then
             ClrData = string.explode(" ",tostring(newData[4]))
             
             Paint(Vector(tonumber(PosData[1]),tonumber(PosData[2]),tonumber(PosData[3])),Angle(tonumber(AngleData[1]),tonumber(AngleData[2]),tonumber(AngleData[3])),Color(tonumber(ClrData[1]),tonumber(ClrData[2]),tonumber(ClrData[3])),tonumber(SizeData[1]))
-            
         end
     end) 
 end
@@ -190,6 +189,7 @@ if CLIENT then
             net.receive("SendPaintData",function()
                 Data = net.readTable()
             end)
+            
             render.setColor(Data[3] / 1.5)    
             render.drawRect(320,1010,Data[4] / 1.89,80)
             
@@ -203,5 +203,17 @@ if CLIENT then
             
             
         end)
+        
+            local paintZone = hologram.create(chip():getPos(), Angle(), "models/holograms/hq_torus_thin.mdl", Vector(1, 1, 1))
+            paintZone:suppressEngineLighting(true)
+            --printTable(Data)
+            timer.create("paintZone_",0.02,0,function()
+                paintZone:setPos(player():getEyeTrace().HitPos  + player():getEyeTrace().HitNormal * Data[2] * 1.2)
+                paintZone:setAngles(player():getEyeTrace().HitNormal:getAngle() + Angle(90,0,0))
+                paintZone:setColor(Data[3] / 2)
+                paintZone:setScale(Vector(Data[1] * 1.1,Data[1] * 1.1,0))
+                --printTable(Data)
+            end)    
+    
     end
 end
