@@ -16,7 +16,7 @@ if SERVER then
 end
 
 if CLIENT then
-    local Rand = math.rand(0,1000)
+    local Rand = tostring(math.random(0,1000))
     
     setName(Rand)
 end
