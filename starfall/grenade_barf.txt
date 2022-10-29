@@ -1,0 +1,53 @@
+--@name Grenade Barf
+--@author {toby}
+--@shared
+
+if SERVER then
+    local Grenades = {}
+    local MaxGrenades = 10
+    local throwForce = 300
+    local Barffed = false 
+    local Grenade = "npc_grenade_frag"
+    
+    
+    
+    hook.add("keypress","",function(ply,key)
+        if ply != owner() then return end
+        if key != IN_KEY.RELOAD then return end
+        
+        if not Barffed then
+            timer.create("spawn_grenade",0.01,0,function()
+                if table.count(Grenades) != MaxGrenades then
+                    local grenade_prp = prop.createSent(owner():getEyePos() + Vector(math.random(-10,10),math.random(-10,10),0) + owner():getEyeAngles():getForward() * 20,Angle(),Grenade,false)
+                    grenade_prp:setMass(3)
+                    grenade_prp:getPhysicsObject():addVelocity(owner():getEyeAngles():getForward() * grenade_prp:getMass() * throwForce)
+                    table.insert(Grenades,{grenade_prp})
+                else
+                    Barffed = true
+                    timer.stop("spawn_grenade")
+                end
+            end)
+        end
+        
+        if Barffed then
+            for k, v in pairs(Grenades) do
+                table.insert(Grenades[k],{Grenades[k][1]:getPos(),Grenades[k][1]:getAngles()})
+                Grenades[k][1]:use()
+                --printTable(Grenades)
+                concmd('+attack')
+                Grenades[k][1]:setPos(Grenades[k][2][1])
+                Grenades[k][1]:setAngles(Grenades[k][2][2])
+            end
+            
+            timer.create("start_grenade",0.001,table.count(Grenades),function()
+                    concmd('-attack')
+                    if timer.repsleft("start_grenade") == 0 then
+                        Barffed = false
+                        Grenades = {}    
+                    end
+            end)
+            
+             
+        end
+    end)
+end
