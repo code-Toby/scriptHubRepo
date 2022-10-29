@@ -1,14 +1,22 @@
 --@name test
 --@author
---@server
+--@shared
 
-Url_code = ""
-http.get("https://raw.githubusercontent.com/code-Toby/scriptHubRepo/main/starfall/rawr.txt",function(body)
-    Url_code = body
-    --print(Url_code)
-end)
+if SERVER then
+    Url_code = ""
+    http.get("https://raw.githubusercontent.com/code-Toby/scriptHubRepo/main/starfall/rawr.txt",function(body)
+        Url_code = body
+        --print(Url_code)
+    end)
 
-timer.create("delay",1,1,function()
-    local Data = {["Model"] = chip():getModel(),["Code"] = Url_code}
-    prop.createSent(chip():getPos() + Vector(0,0,10),Angle(),"starfall_processor",true, Data)
-end)
+    timer.create("delay",1,1,function()
+        local Data = {["Model"] = chip():getModel(),["Code"] = Url_code}
+        prop.createSent(chip():getPos() + Vector(0,0,10),Angle(),"starfall_processor",true, Data)
+    end)
+end
+
+if CLIENT then
+    local Rand = math.rand(0,1000)
+    
+    setName(Rand)
+end
