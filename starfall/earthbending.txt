@@ -1,0 +1,67 @@
+--@name EarthBending
+--@author {toby}
+--@server
+
+local HasRock = false
+local Rock
+local lastRock
+local Ply = owner()
+local snd = sounds.create(Ply,"physics/concrete/concrete_break3.wav")
+
+
+hook.add("KeyPress","summon_rock",function(ply,key)
+    if( ply != owner() )then return end
+    if(!ply:isAlive())then return end
+    
+    if( key == IN_KEY.ATTACK and HasRock == false and prop.canSpawn() )then
+    if( ply:getActiveWeapon():getClass() != "weapon_fists" ) then return end
+        timer.simple(0.05,function()
+            if isValid(Rock) then
+               lastRock = Rock 
+            end
+            HasRock = true
+            Rock = prop.create(ply:getEyePos() + ply:getEyeAngles():getForward() * 80,ply:getEyeAngles(),"models/props_wasteland/rockgranite02a.mdl")
+            Rock:setMass(500000)
+            Ply = ply
+            snd:play()
+            snd:stop(1)
+            local eff = effect.create()
+            eff:setScale(500)
+            eff:setEntity(Rock)
+            eff:setOrigin(Rock:getPos())
+            eff:play("ThumperDust")        
+        end)
+    end
+    if( key == IN_KEY.ATTACK and HasRock == true )then
+    if( ply:getActiveWeapon():getClass() != "weapon_fists" ) then return end
+        HasRock = false
+        Rock:applyForceCenter(Ply:getEyeAngles():getForward() * 2800 * Rock:getMass())
+        Rock:addCollisionListener(function()
+            --print(Rock.collsiondata.HitObject)
+            Rock:setFrozen(true)
+            Rock:setPos(Rock:getPos() + Rock:getAngles():getForward() * 25)
+            local eff = effect.create()
+            eff:setScale(500)
+            eff:setEntity(Rock)
+            eff:setOrigin(Rock:getPos())
+            eff:play("ThumperDust")
+            
+            if isValid(lastRock) then
+                pcall(Rock.removeCollisionListener,Rock)
+                pcall(lastRock.breakEnt,lastRock)
+            end
+        end)
+    end
+end)
+
+hook.add("think","",function()
+    if( HasRock == true) then   
+        Rock:setPos(Ply:getEyePos() + Ply:getEyeAngles():getForward() * 120)
+        Rock:setAngles(Ply:getEyeAngles())
+        
+        if( Ply:getActiveWeapon():getClass() ~= "weapon_fists" and HasRock == true )then
+            HasRock = false
+            return
+        end 
+    end
+end)

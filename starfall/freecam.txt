@@ -1,0 +1,45 @@
+--@name FreeCam
+--@author {toby}
+--@server
+
+local prp = prop.create(chip():getPos(),Angle(),"models/hunter/blocks/cube1x1x1.mdl",true)
+local CamEnt = holograms.create(chip():getPos() + Vector(0,0,20),Angle(),"models/Combine_Scanner.mdl")
+local isFreeCamming = false
+
+enableHud(owner(),true)
+
+hook.add("keypress","",function(ply, key)
+    if ply != owner() then return end
+    if key == IN_KEY.WALK then
+        if isFreeCamming == false then
+            isFreeCamming = true
+            owner():setViewEntity(CamEnt)
+            prp:setPos(owner():getPos())
+        else
+            isFreeCamming = false
+            owner():setViewEntity(owner())
+            prp:setPos(chip():getPos())
+        end
+        
+        print(isFreeCamming)
+    end
+end)
+
+
+hook.add("tick","",function()
+    if isFreeCamming == true then
+         CamEnt:setAngles(owner():getEyeAngles())
+        
+        if owner():keyDown(IN_KEY.FORWARD) then 
+            CamEnt:setPos(CamEnt:getPos() + CamEnt:getAngles():getForward() * 10)
+        end
+        
+        if owner():keyDown(IN_KEY.BACK) then 
+            CamEnt:setPos(CamEnt:getPos() + CamEnt:getAngles():getForward() * -10)
+        end
+        
+        if owner():keyDown(IN_KEY.JUMP) then 
+            CamEnt:setPos(CamEnt:getPos() + CamEnt:getAngles():getUp() * 10)
+        end
+    end
+end)
